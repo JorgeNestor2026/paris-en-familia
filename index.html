@@ -57,7 +57,7 @@ footer{padding:1.2rem 1.1rem .4rem;text-align:center;font-family:var(--fm);font-
 <div class="banner" id="banner"></div>
 <div id="map"></div>
 <main class="schedule" id="schedule"></main>
-<footer>🧭 "Cómo llegar" abre Google Maps con ruta desde tu ubicación</footer>
+<footer>🧭 "Desde..." abre Google Maps con ruta caminando desde la parada anterior</footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js" crossorigin=""></script>
 <script>
@@ -117,7 +117,7 @@ function initMap(){
   layer=L.layerGroup().addTo(map);
 }
 function pin(h){return L.divIcon({html:h,className:'',iconSize:[26,26],iconAnchor:[13,13]});}
-function gmaps(lat,lng){return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;}
+function gmaps(fLat,fLng,tLat,tLng){return `https://www.google.com/maps/dir/?api=1&origin=${fLat},${fLng}&destination=${tLat},${tLng}&travelmode=walking`;}
 
 function renderDay(idx){
   const day=DAYS[idx];
@@ -130,7 +130,8 @@ function renderDay(idx){
   L.marker([HOME.lat,HOME.lng],{icon:pin('<div class="lmarker home">🏠</div>')}).addTo(layer).bindPopup(`<b>${HOME.name}</b>`);
   day.stops.forEach((s,i)=>{
     const m=L.marker([s.lat,s.lng],{icon:pin(`<div class="lmarker" style="background:${day.color}">${i+1}</div>`)}).addTo(layer);
-    m.bindPopup(`<b>${s.time} · ${s.title.replace(/—/g,'–')}</b><br>${s.address}<br><a href="${gmaps(s.lat,s.lng)}" target="_blank">Cómo llegar →</a>`);
+    const prev0=i===0?HOME:day.stops[i-1];
+    m.bindPopup(`<b>${s.time} · ${s.title.replace(/—/g,'–')}</b><br>${s.address}<br><a href="${gmaps(prev0.lat,prev0.lng,s.lat,s.lng)}" target="_blank">Cómo llegar →</a>`);
     pts.push([s.lat,s.lng]);
   });
   L.polyline(pts,{color:day.color,weight:3,dashArray:'6,8',opacity:.85}).addTo(layer);
@@ -138,6 +139,8 @@ function renderDay(idx){
   const sch=document.getElementById('schedule');
   sch.innerHTML='';
   day.stops.forEach((s,i)=>{
+    const prev=i===0?HOME:day.stops[i-1];
+    const prevName=i===0?'el departamento':'parada '+i;
     const el=document.createElement('div');
     el.className='stop'+(s.special?' special':'');
     const badge=document.createElement('div');
@@ -150,7 +153,7 @@ function renderDay(idx){
       <div class="addr">${s.address}</div>
       <p class="notes">${s.notes}</p>
       <div class="btn-row">
-        <a class="go" href="${gmaps(s.lat,s.lng)}" target="_blank">🧭 Cómo llegar</a>
+        <a class="go" href="${gmaps(prev.lat,prev.lng,s.lat,s.lng)}" target="_blank">🧭 Desde ${prevName}</a>
       </div>`;
     el.appendChild(badge);
     el.appendChild(col);
